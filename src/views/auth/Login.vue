@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div
+    class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+  >
     <div class="max-w-md w-full space-y-8">
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -37,9 +39,10 @@
         <div>
           <button
             type="submit"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            :disabled="loading"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            Se connecter
+            {{ loading ? "Connexion en cours..." : "Se connecter" }}
           </button>
         </div>
 
@@ -48,7 +51,11 @@
         </div>
 
         <div class="text-sm text-center">
-          <router-link to="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
+          <router-link
+            v-if="!isAdminLogin"
+            to="/register"
+            class="font-medium text-indigo-600 hover:text-indigo-500"
+          >
             Pas encore de compte ? Inscrivez-vous
           </router-link>
         </div>
@@ -58,38 +65,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../../stores/auth';
+import { ref, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "../../stores/auth";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 
-const email = ref('');
-const password = ref('');
-const error = ref('');
+const email = ref("");
+const password = ref("");
+const error = ref("");
+const loading = ref(false);
+
+const isAdminLogin = computed(() => route.query.admin === "true");
 
 const handleSubmit = async () => {
+  loading.value = true;
+  error.value = "";
+
   try {
     await authStore.signIn(email.value, password.value);
     const userRole = authStore.userProfile?.role;
-    
+
     switch (userRole) {
-      case 'admin':
-        router.push('/admin');
+      case "admin":
+        router.push("/admin");
         break;
-      case 'restaurant':
-        router.push('/restaurant');
+      case "restaurant":
+        router.push("/restaurant");
         break;
-      case 'livreur':
-        router.push('/delivery');
+      case "livreur":
+        router.push("/delivery");
         break;
       default:
-        router.push('/');
+        router.push("/");
     }
   } catch (e: any) {
-    error.value = 'Email ou mot de passe incorrect';
-    console.error('Erreur de connexion:', e);
+    error.value = "Email ou mot de passe incorrect";
+    console.error("Erreur de connexion:", e);
+  } finally {
+    loading.value = false;
   }
 };
 </script>
