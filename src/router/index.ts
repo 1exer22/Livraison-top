@@ -11,6 +11,8 @@ import DeliveryDashboard from "../views/delivery/Dashboard.vue";
 import DeliverySetup from "../views/delivery/Setup.vue";
 import ClientProfile from "../views/client/Profile.vue";
 import ClientOrders from "../views/client/Orders.vue";
+import DeliveryManagement from "../views/admin/DeliveryManagement.vue";
+import DeliveryScheduling from "../views/admin/DeliveryScheduling.vue";
 
 const routes = [
   {
@@ -50,6 +52,18 @@ const routes = [
     path: "/admin",
     name: "admin",
     component: AdminDashboard,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: "/admin/delivery-management",
+    name: "delivery-management",
+    component: DeliveryManagement,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: "/admin/delivery-scheduling",
+    name: "delivery-scheduling",
+    component: DeliveryScheduling,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
@@ -104,7 +118,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);

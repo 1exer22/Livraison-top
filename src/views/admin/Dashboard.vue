@@ -8,12 +8,26 @@
         <h1 class="text-3xl font-bold text-gray-900">
           Tableau de bord administrateur
         </h1>
-        <button
-          @click="authStore.signOut"
-          class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
-        >
-          Déconnexion
-        </button>
+        <div class="flex items-center space-x-4">
+          <router-link
+            to="/admin/delivery-management"
+            class="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-500 border border-indigo-500 rounded-md"
+          >
+            Gestion des livreurs
+          </router-link>
+          <router-link
+            to="/admin/delivery-scheduling"
+            class="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-500 border border-indigo-500 rounded-md"
+          >
+            Planification
+          </router-link>
+          <button
+            @click="authStore.signOut"
+            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
+          >
+            Déconnexion
+          </button>
+        </div>
       </div>
     </header>
 

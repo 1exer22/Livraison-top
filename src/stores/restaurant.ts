@@ -98,15 +98,24 @@ export interface Order {
 export interface DeliveryProfile {
   id: string;
   userId: string;
-  name: string;
+  fullName: string; 
   phone: string;
   isAvailable: boolean;
-  currentLocation: {
+  currentLocation?: {
     lat: number;
     lng: number;
   };
+  vehicleInfo?: {
+    vehicleType: string;
+    licensePlate?: string;
+  };
+  // Propriétés directes pour le véhicule
+  vehicleType?: string;
+  vehicleNumber?: string;
+  address?: string;
   rating: number;
   totalDeliveries: number;
+  currentOrderId?: string; 
 }
 
 export const useRestaurantStore = defineStore("restaurant", () => {
@@ -114,6 +123,7 @@ export const useRestaurantStore = defineStore("restaurant", () => {
   const menuItems = ref<MenuItem[]>([]);
   const orders = ref<Order[]>([]);
   const restaurants = ref<Restaurant[]>([]);
+  const deliverers = ref<DeliveryProfile[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const availableDeliverers = ref<DeliveryProfile[]>([]);
@@ -413,11 +423,21 @@ export const useRestaurantStore = defineStore("restaurant", () => {
 
   const assignDeliverer = async (orderId: string, deliveryId: string) => {
     try {
+      // Mise à jour de la commande
       const orderRef = doc(db, "orders", orderId);
       await updateDoc(orderRef, {
         deliveryId,
         status: "delivering" as OrderStatus,
       });
+      
+      // Mise à jour du statut de disponibilité du livreur
+      const delivererRef = doc(db, "deliveryProfiles", deliveryId);
+      await updateDoc(delivererRef, {
+        isAvailable: false,
+        currentOrderId: orderId // Ajouter une référence à la commande active
+      });
+      
+      console.log(`Livreur ${deliveryId} assigné à la commande ${orderId} et marqué comme indisponible`);
     } catch (e: any) {
       error.value = e.message;
       throw e;
@@ -462,21 +482,62 @@ export const useRestaurantStore = defineStore("restaurant", () => {
     }
   };
 
+  // Fonction pour récupérer tous les livreurs
+  const fetchDeliverers = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const q = query(collection(db, "deliveryProfiles"));
+      const querySnapshot = await getDocs(q);
+      const delivererData: DeliveryProfile[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        delivererData.push({
+          id: doc.id,
+          userId: data.userId,
+          fullName: data.fullName || data.name || "Sans nom",
+          phone: data.phone || "",
+          isAvailable: data.isAvailable || false,
+          currentLocation: data.currentLocation,
+          vehicleInfo: data.vehicleInfo,
+          // Ajout des propriétés directes pour le véhicule
+          vehicleType: data.vehicleType || "",
+          vehicleNumber: data.vehicleNumber || "",
+          address: data.address || "",
+          rating: data.rating || 0,
+          totalDeliveries: data.totalDeliveries || 0,
+          currentOrderId: data.currentOrderId
+        });
+      });
+      
+      deliverers.value = delivererData;
+      return delivererData;
+    } catch (err: any) {
+      console.error("Erreur lors de la récupération des livreurs:", err);
+      error.value = err.message;
+      return [];
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     menuItems,
     orders,
     restaurants,
+    deliverers,
     availableDeliverers,
     loading,
     error,
-    fetchMenuItems,
+    uploadImage,
+    deleteImage,
     fetchRestaurants,
     fetchRestaurantById,
     fetchMenuItemsByRestaurant,
+    fetchMenuItems,
     addMenuItem,
     updateMenuItem,
-    uploadImage,
-    deleteImage,
     startOrdersListener,
     stopOrdersListener,
     updateOrderStatus,
@@ -484,5 +545,6 @@ export const useRestaurantStore = defineStore("restaurant", () => {
     assignDeliverer,
     fetchAvailableDeliverers,
     fetchDelivererById,
+    fetchDeliverers
   };
 });

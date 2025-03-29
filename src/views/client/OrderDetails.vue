@@ -56,92 +56,68 @@
             <div class="p-6">
               <h2 class="text-lg font-medium text-gray-900 mb-6">Suivi de la commande</h2>
               
-              <!-- Informations de livraison en temps réel -->
-              <div v-if="order.status === 'delivering'" class="mb-8 bg-indigo-50 p-4 rounded-lg">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <!-- Temps estimé -->
-                  <div class="flex items-center">
-                    <div class="rounded-full bg-indigo-100 p-2 mr-3">
-                      <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+              <!-- Carte de suivi en temps réel -->
+              <div v-if="order.status === 'delivering' && order.deliveryId" class="mb-8">
+                <div class="mb-4 bg-indigo-50 p-4 rounded-lg">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p class="text-sm font-medium text-gray-700">Distance estimée</p>
+                      <p class="text-2xl font-bold text-indigo-600">{{ deliveryInfo.distance || "Calcul..." }}</p>
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-gray-500">Temps estimé</p>
-                      <p class="text-lg font-semibold text-gray-900">{{ estimatedTime || '...' }} min</p>
-                    </div>
-                  </div>
-
-                  <!-- Distance restante -->
-                  <div class="flex items-center">
-                    <div class="rounded-full bg-indigo-100 p-2 mr-3">
-                      <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
+                      <p class="text-sm font-medium text-gray-700">Temps estimé</p>
+                      <p class="text-2xl font-bold text-indigo-600">{{ deliveryInfo.duration || "Calcul..." }}</p>
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-gray-500">Distance restante</p>
-                      <p class="text-lg font-semibold text-gray-900">{{ remainingDistance || '...' }} km</p>
-                    </div>
-                  </div>
-
-                  <!-- Informations du livreur -->
-                  <div class="flex items-center">
-                    <div class="rounded-full bg-indigo-100 p-2 mr-3">
-                      <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p class="text-sm font-medium text-gray-500">Votre livreur</p>
-                      <p class="text-lg font-semibold text-gray-900">{{ deliverer?.name || 'En attente...' }}</p>
-                      <p v-if="deliverer?.phone" class="text-sm text-gray-500">{{ deliverer.phone}}</p>
+                      <p class="text-sm font-medium text-gray-700">Livreur</p>
+                      <p class="text-lg font-semibold">{{ getDelivererDisplayName }}</p>
                     </div>
                   </div>
                 </div>
 
-                <!-- Message si le livreur n'est pas encore assigné -->
-                <p v-if="!deliverer" class="mt-4 text-sm text-center text-indigo-600">
-                  Un livreur sera bientôt assigné à votre commande...
-                </p>
+                <!-- Carte de livraison -->
+                <div class="h-80 mb-4 rounded-lg overflow-hidden shadow-inner">
+                  <div id="map" class="h-full w-full"></div>
+                </div>
+
+                <!-- Informations du livreur -->
+                <div v-if="deliverer" class="bg-gray-50 p-4 rounded-lg">
+                  <h3 class="text-md font-medium text-gray-900 mb-2">Informations du livreur</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <p><span class="font-medium">Nom:</span> {{ getDelivererDisplayName }}</p>
+                    <p><span class="font-medium">Téléphone:</span> {{ getDelivererPhone }}</p>
+                    <p><span class="font-medium">Véhicule:</span> {{ deliverer.vehicleInfo?.type }} {{ deliverer.vehicleInfo?.model }}</p>
+                    <p><span class="font-medium">Immatriculation:</span> {{ deliverer.vehicleInfo?.plate }}</p>
+                  </div>
+                </div>
               </div>
-
+              
+              <!-- Timeline détaillée -->
               <div class="relative">
-                <div class="absolute top-0 left-4 h-full w-0.5 bg-gray-200"></div>
-                <div class="space-y-8">
-                  <div
-                    v-for="(event, index) in order.trackingHistory"
-                    :key="index"
-                    class="relative flex items-start"
-                  >
-                    <div
-                      :class="[
-                        'absolute left-0 mt-1 w-8 h-8 rounded-full flex items-center justify-center',
-                        event.status === order.status
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-200 text-gray-400',
-                      ]"
-                    >
-                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fill-rule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div class="ml-12">
-                      <p class="text-sm font-medium text-gray-900">
-                        {{ getStatusLabel(event.status) }}
-                      </p>
-                      <p class="mt-1 text-sm text-gray-500">
-                        {{ formatDate(event.timestamp) }}
-                        <span v-if="event.note" class="ml-2">- {{ event.note }}</span>
-                      </p>
-                    </div>
-                  </div>
+                <div class="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                  <div class="h-full w-0.5 bg-gray-200"></div>
                 </div>
+                <ul class="relative space-y-8">
+                  <li v-for="(event, index) in order.trackingHistory" :key="index" class="relative pl-8">
+                    <div 
+                      class="absolute left-0 top-1.5 h-5 w-5 rounded-full border-2 border-white ring-1 ring-gray-300"
+                      :class="getStatusColorClass(event.status)"
+                    ></div>
+                    <div class="flex justify-between">
+                      <p class="font-medium text-gray-900">{{ getStatusLabel(event.status) }}</p>
+                      <p class="text-sm text-gray-500">{{ formatDate(event.timestamp) }}</p>
+                    </div>
+                    <p v-if="event.note" class="mt-1 text-sm text-gray-500">{{ event.note }}</p>
+                  </li>
+                  
+                  <!-- Étapes futures -->
+                  <template v-if="order.status !== 'delivered' && order.status !== 'cancelled'">
+                    <li v-for="futureStep in getFutureSteps(order.status)" :key="futureStep.status" class="relative pl-8">
+                      <div class="absolute left-0 top-1.5 h-5 w-5 rounded-full border-2 border-white bg-gray-200"></div>
+                      <p class="font-medium text-gray-400">{{ futureStep.label }}</p>
+                    </li>
+                  </template>
+                </ul>
               </div>
             </div>
           </div>
@@ -203,276 +179,79 @@
   <script setup lang="ts">
   import { ref, onMounted, onUnmounted, computed } from 'vue';
   import { useRoute } from 'vue-router';
+  import { doc, getDoc, onSnapshot } from 'firebase/firestore';
   import { db } from '../../firebase/config';
-  import { doc, onSnapshot } from 'firebase/firestore';
   import { format } from 'date-fns';
   import { fr } from 'date-fns/locale';
-  import type { Order, OrderStatus, DeliveryProfile } from '../../stores/restaurant';
-  import { useRestaurantStore } from '../../stores/restaurant';
 
+  // Type pour les statuts de commande
+  type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled';
+
+  // Interfaces pour les données de livraison
+  interface DeliveryInfo {
+    distance: string;
+    duration: string;
+    origin: { lat: number; lng: number };
+    destination: { lat: number; lng: number };
+    currentPosition?: { lat: number; lng: number };
+  }
+
+  // Type pour le livreur avec toutes les propriétés nécessaires
+  interface DeliveryProfile {
+    id: string;
+    userId: string;
+    fullName: string;    // Nouveau champ
+    name: string;        // Champ existant
+    phoneNumber: string; // Nouveau champ
+    phone: string;       // Champ existant
+    isAvailable: boolean;
+    currentLocation: { lat: number; lng: number };
+    rating: number;
+    totalDeliveries: number;
+    currentOrderId?: string;
+    vehicleInfo?: {
+      type: string;
+      model: string;
+      color: string;
+      plate: string;
+    };
+  }
+
+  // Déclaration pour étendre Window avec l'API Google Maps
+  declare global {
+    interface Window {
+      google: any;
+    }
+  }
+
+  // Déclaration des variables
   const route = useRoute();
-  const restaurantStore = useRestaurantStore();
-  const orderId = route.params.id as string;
-  const order = ref<Order | null>(null);
+  const orderId = ref(route.params.id as string);
+  const order = ref<any>(null);
   const restaurant = ref<any>(null);
   const deliverer = ref<DeliveryProfile | null>(null);
   const loading = ref(true);
-  const error = ref<string | null>(null);
-  const estimatedTime = ref<number | null>(null);
-  const remainingDistance = ref<number | null>(null);
-  let unsubscribe: (() => void) | null = null;
+  const error = ref('');
+  // Infos de livraison
+  const deliveryInfo = ref<DeliveryInfo>({
+    distance: '',
+    duration: '',
+    origin: { lat: 0, lng: 0 },
+    destination: { lat: 0, lng: 0 }
+  });
 
-  // Fonction pour charger les informations du restaurant
-  const loadRestaurantInfo = async (restaurantId: string) => {
-    try {
-      const restaurantData = await restaurantStore.fetchRestaurantById(restaurantId);
-      if (restaurantData) {
-        restaurant.value = restaurantData;
-      }
-    } catch (err) {
-      console.error('Erreur lors du chargement du restaurant:', err);
-    }
-  };
+  // Méthode pour obtenir le nom complet et le numéro de téléphone du livreur
+  const getDelivererDisplayName = computed(() => {
+    if (!deliverer.value) return 'En attente...';
+    return deliverer.value.fullName || deliverer.value.name;
+  });
 
-  // Fonction pour effectuer une requête de géocodage
-  const geocodeAddress = async (address) => {
-    try {
-      console.log("Géocodage de l'adresse:", address);
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Erreur de géocodage: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log("Résultat du géocodage:", data);
-      
-      if (data.status === 'OK' && data.results && data.results.length > 0) {
-        const location = data.results[0].geometry.location;
-        console.log(`Coordonnées trouvées: ${location.lat}, ${location.lng}`);
-        return {
-          latitude: location.lat,
-          longitude: location.lng
-        };
-      } else {
-        console.error(`Géocodage échoué: ${data.status}`, data);
-        return null;
-      }
-    } catch (error) {
-      console.error('Erreur lors du géocodage:', error);
-      return null;
-    }
-  };
+  const getDelivererPhone = computed(() => {
+    if (!deliverer.value) return '';
+    return deliverer.value.phoneNumber || deliverer.value.phone;
+  });
 
-  // Fonction pour calculer la distance et le temps
-  const calculateDeliveryInfo = async () => {
-    if (!deliverer.value?.currentLocation || !order.value?.customerAddress) {
-      console.error("Données manquantes: position du livreur ou adresse client");
-      return;
-    }
-    
-    try {
-      console.log("Calcul de la distance avec Routes API...");
-      
-      // Obtenir les coordonnées de la destination par géocodage
-      console.log("Adresse client:", order.value.customerAddress);
-      const destinationLatLng = await geocodeAddress(order.value.customerAddress);
-      
-      if (!destinationLatLng) {
-        throw new Error(`Impossible de géocoder l'adresse client: ${order.value.customerAddress}`);
-      }
-      
-      // Coordonnées d'origine (livreur)
-      const originLatLng = {
-        latitude: deliverer.value.currentLocation.lat,
-        longitude: deliverer.value.currentLocation.lng
-      };
-      console.log("Coordonnées du livreur:", originLatLng);
-      
-      // Préparer les paramètres pour la requête à la Routes API
-      const requestBody = {
-        origin: {
-          location: {
-            latLng: originLatLng
-          }
-        },
-        destination: {
-          location: {
-            latLng: destinationLatLng
-          }
-        },
-        travelMode: "DRIVE",
-        routingPreference: "TRAFFIC_AWARE",
-        computeAlternativeRoutes: false,
-        routeModifiers: {
-          avoidTolls: false,
-          avoidHighways: false,
-          avoidFerries: false
-        },
-        languageCode: "fr-FR",
-        units: "METRIC"
-      };
-      
-      console.log("Requête Routes API:", requestBody);
-      
-      // Appeler l'API Routes via fetch
-      const response = await fetch(
-        'https://routes.googleapis.com/directions/v2:computeRoutes', 
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline'
-          },
-          body: JSON.stringify(requestBody)
-        }
-      );
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur de la Routes API:', response.status, errorText);
-        throw new Error(`Erreur de la Routes API: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("Résultat Routes API:", result);
-      
-      if (result.routes && result.routes.length > 0) {
-        // Calculer la distance en km
-        const distanceInMeters = result.routes[0].distanceMeters || 0;
-        remainingDistance.value = Math.round((distanceInMeters / 1000) * 10) / 10;
-        
-        // Calculer le temps en minutes
-        const durationStr = result.routes[0].duration || "0s";
-        const durationSeconds = parseInt(durationStr.replace('s', ''));
-        estimatedTime.value = Math.ceil(durationSeconds / 60);
-        
-        console.log(`Routes API - Distance: ${remainingDistance.value} km, Temps: ${estimatedTime.value} min`);
-      }
-    } catch (err) {
-      console.error('Erreur lors du calcul de l\'itinéraire:', err);
-      
-      // Calculer une estimation approximative basée sur la distance à vol d'oiseau
-      console.log("Tentative de calcul de distance basique");
-      calculateBasicDistance();
-    }
-  };
-  
-  // Fonction pour calculer une distance basique à vol d'oiseau en cas d'échec de l'API
-  const calculateBasicDistance = async () => {
-    // Vérifier si on a les coordonnées nécessaires
-    if (!deliverer.value?.currentLocation || !order.value?.customerAddress) {
-      console.error("Données manquantes pour le calcul basique");
-      remainingDistance.value = null;
-      estimatedTime.value = null;
-      return;
-    }
-    
-    try {
-      const R = 6371; // Rayon de la Terre en km
-      const lat1 = deliverer.value.currentLocation.lat;
-      const lon1 = deliverer.value.currentLocation.lng;
-      
-      // Tenter de géocoder l'adresse client si nous n'avons pas ses coordonnées
-      let lat2, lon2;
-      
-      if (order.value.lat && order.value.lng) {
-        // Utiliser les coordonnées existantes
-        lat2 = order.value.lat;
-        lon2 = order.value.lng;
-        console.log("Utilisation des coordonnées existantes du client:", lat2, lon2);
-      } else {
-        // Géocoder l'adresse
-        console.log("Géocodage de l'adresse pour le calcul basique:", order.value.customerAddress);
-        const coords = await geocodeAddress(order.value.customerAddress);
-        
-        if (!coords) {
-          console.error("Impossible de géocoder l'adresse, calcul impossible");
-          remainingDistance.value = null;
-          estimatedTime.value = null;
-          return;
-        }
-        
-        lat2 = coords.latitude;
-        lon2 = coords.longitude;
-        console.log("Coordonnées obtenues par géocodage:", lat2, lon2);
-      }
-      
-      // Calcul de la distance à vol d'oiseau (formule haversine)
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-               Math.sin(dLon/2) * Math.sin(dLon/2);
-      
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const distance = R * c;
-      
-      // Arrondir à 1 décimale
-      remainingDistance.value = Math.round(distance * 10) / 10;
-      
-      // Estimer le temps (en supposant une vitesse moyenne de 30 km/h en ville)
-      estimatedTime.value = Math.ceil(distance * 2); // 2 minutes par km en moyenne
-      
-      console.log(`Estimation basique - Distance: ${remainingDistance.value} km, Temps: ${estimatedTime.value} min`);
-    } catch (error) {
-      console.error("Erreur lors du calcul basique:", error);
-      remainingDistance.value = null;
-      estimatedTime.value = null;
-    }
-  };
-
-  // Fonction pour charger les informations du livreur
-  const loadDelivererInfo = async (deliveryId: string) => {
-    try {
-      const delivererData = await restaurantStore.fetchDelivererById(deliveryId);
-      if (delivererData) {
-        deliverer.value = delivererData;
-        // Calculer la distance et le temps dès que les informations du livreur sont chargées
-        await calculateDeliveryInfo();
-      }
-    } catch (err) {
-      console.error('Erreur lors du chargement du livreur:', err);
-    }
-  };
-
-  const getStatusLabel = (status: OrderStatus): string => {
-    const labels: Record<OrderStatus, string> = {
-      pending: 'En attente',
-      accepted: 'Acceptée',
-      preparing: 'En préparation',
-      ready: 'Prêt',
-      delivering: 'En livraison',
-      delivered: 'Livré',
-      cancelled: 'Annulé',
-    };
-    return labels[status] || status;
-  };
-
-  const getStatusClass = (status: OrderStatus): string => {
-    const classes: Record<OrderStatus, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      accepted: 'bg-green-100 text-green-800',
-      preparing: 'bg-blue-100 text-blue-800',
-      ready: 'bg-green-100 text-green-800',
-      delivering: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
-    };
-    return classes[status];
-  };
-
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount);
-  };
-
+  // Fonctions d'aide au format
   const formatDate = (date: any): string => {
     if (!date) return 'Date inconnue';
     
@@ -496,66 +275,405 @@
     }
   };
 
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(amount);
+  };
+
+  const getStatusLabel = (status: OrderStatus): string => {
+    const labels: Record<OrderStatus, string> = {
+      pending: 'En attente',
+      confirmed: 'Acceptée',
+      preparing: 'En préparation',
+      ready: 'Prêt',
+      delivering: 'En livraison',
+      delivered: 'Livré',
+      cancelled: 'Annulé',
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusClass = (status: OrderStatus): string => {
+    const classes: Record<OrderStatus, string> = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-green-100 text-green-800',
+      preparing: 'bg-blue-100 text-blue-800',
+      ready: 'bg-green-100 text-green-800',
+      delivering: 'bg-purple-100 text-purple-800',
+      delivered: 'bg-gray-100 text-gray-800',
+      cancelled: 'bg-red-100 text-red-800',
+    };
+    return classes[status as OrderStatus];
+  };
+
+  // Fonction pour géocoder une adresse en coordonnées
+  const geocodeAddress = async (address: string) => {
+    try {
+      console.log("Géocodage de l'adresse:", address);
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Erreur de géocodage: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
+        const location = data.results[0].geometry.location;
+        return { 
+          lat: location.lat, 
+          lng: location.lng 
+        };
+      } else {
+        console.error(`Géocodage échoué: ${data.status}`, data);
+        return null;
+      }
+    } catch (error) {
+      console.error('Erreur lors du géocodage:', error);
+      return null;
+    }
+  };
+
   // Charger le script Google Maps
-  const loadGoogleMapsScript = () => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-    
+  const loadGoogleMapsScript = (): Promise<void> => {
     return new Promise((resolve) => {
-      script.onload = resolve;
+      if (window.google) {
+        // Google Maps API est déjà chargée
+        resolve();
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      document.head.appendChild(script);
     });
+  };
+
+  // Fonction de calcul basique de distance quand l'API échoue
+  const calculateBasicDistance = async () => {
+    // Vérifier si on a les coordonnées nécessaires
+    if (!deliverer.value?.currentLocation || !order.value?.customerAddress) {
+      console.error("Données manquantes pour le calcul basique");
+      return;
+    }
+    
+    try {
+      const R = 6371; // Rayon de la Terre en km
+      const lat1 = deliverer.value.currentLocation.lat;
+      const lon1 = deliverer.value.currentLocation.lng;
+      
+      // Tenter de géocoder l'adresse client si nous n'avons pas ses coordonnées
+      let lat2, lon2;
+      
+      if (order.value.lat && order.value.lng) {
+        // Utiliser les coordonnées existantes
+        lat2 = order.value.lat;
+        lon2 = order.value.lng;
+      } else {
+        // Géocoder l'adresse
+        const coords = await geocodeAddress(order.value.customerAddress);
+        
+        if (!coords) {
+          console.error("Impossible de géocoder l'adresse, calcul impossible");
+          return;
+        }
+        
+        lat2 = coords.lat;
+        lon2 = coords.lng;
+      }
+      
+      // Calcul de la distance à vol d'oiseau (formule haversine)
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+               Math.sin(dLon/2) * Math.sin(dLon/2);
+      
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c;
+      
+      // Arrondir à 1 décimale
+      const distanceValue = Math.round(distance * 10) / 10;
+      
+      // Estimer le temps (en supposant une vitesse moyenne de 30 km/h en ville)
+      const durationValue = Math.ceil(distance * 2); // 2 minutes par km en moyenne
+      
+      // Mettre à jour deliveryInfo
+      deliveryInfo.value.distance = `${distanceValue} km`;
+      deliveryInfo.value.duration = `${durationValue} min`;
+    } catch (error) {
+      console.error("Erreur lors du calcul basique:", error);
+    }
+  };
+
+  // Fonction pour charger les informations du restaurant
+  const loadRestaurantInfo = async (restaurantId: string) => {
+    try {
+      const restaurantRef = doc(db, 'restaurants', restaurantId);
+      const restaurantSnap = await getDoc(restaurantRef);
+      
+      if (restaurantSnap.exists()) {
+        restaurant.value = { id: restaurantSnap.id, ...restaurantSnap.data() };
+      } else {
+        console.error("Restaurant non trouvé");
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement du restaurant:', err);
+    }
+  };
+
+  // Fonction pour charger les informations du livreur
+  const loadDelivererInfo = async (deliveryId: string) => {
+    try {
+      const delivererRef = doc(db, 'deliverers', deliveryId);
+      const delivererSnap = await getDoc(delivererRef);
+      
+      if (delivererSnap.exists()) {
+        deliverer.value = { id: delivererSnap.id, ...delivererSnap.data() } as DeliveryProfile;
+      } else {
+        console.error("Livreur non trouvé");
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement du livreur:', err);
+    }
+  };
+
+  // Modification de la fonction calculateDeliveryInfo pour mettre à jour l'objet deliveryInfo
+  const calculateDeliveryInfo = async () => {
+    if (!order.value) return;
+
+    try {
+      // Géocoder les adresses
+      const restaurantLatLng = await geocodeAddress(restaurant.value.address);
+      const destinationLatLng = await geocodeAddress(order.value.customerAddress);
+
+      if (!restaurantLatLng || !destinationLatLng) {
+        console.error("Impossible de géocoder les adresses");
+        return await calculateBasicDistance();
+      }
+
+      // Mettre à jour l'objet deliveryInfo avec les coordonnées
+      deliveryInfo.value.origin = restaurantLatLng;
+      deliveryInfo.value.destination = destinationLatLng;
+
+      // Si le livreur a une position actuelle, l'utiliser
+      if (deliverer.value && deliverer.value.currentLocation) {
+        deliveryInfo.value.currentPosition = deliverer.value.currentLocation;
+      }
+
+      // Si l'API Google Maps est disponible
+      if (window.google && window.google.maps) {
+        const service = new window.google.maps.DistanceMatrixService();
+
+        const request = {
+          origins: [restaurantLatLng],
+          destinations: [destinationLatLng],
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          unitSystem: window.google.maps.UnitSystem.METRIC,
+        };
+
+        service.getDistanceMatrix(request, (response: any, status: string) => {
+          if (status === "OK" && response && response.rows && response.rows[0].elements) {
+            const result = response.rows[0].elements[0];
+
+            if (result.status === "OK") {
+              deliveryInfo.value.distance = result.distance.text;
+              deliveryInfo.value.duration = result.duration.text;
+              
+              console.log("Distance et durée calculées via l'API Google Maps", {
+                distance: result.distance.text,
+                duration: result.duration.text
+              });
+
+              // Initialiser la carte après avoir récupéré les données
+              initializeMap();
+            } else {
+              console.error("Erreur lors du calcul de la distance via l'API:", result.status);
+              calculateBasicDistance();
+            }
+          } else {
+            console.error("Erreur lors de l'appel à l'API Distance Matrix:", status);
+            calculateBasicDistance();
+          }
+        });
+      } else {
+        console.warn("L'API Google Maps n'est pas disponible, calcul basique utilisé");
+        calculateBasicDistance();
+      }
+    } catch (error) {
+      console.error("Erreur lors du calcul de la distance:", error);
+      calculateBasicDistance();
+    }
+  };
+
+  // Fonction pour initialiser la carte
+  const initializeMap = () => {
+    // Vérifier que l'API Google Maps est chargée et qu'on a les coordonnées
+    if (
+      window.google && 
+      window.google.maps && 
+      order.value && 
+      deliveryInfo.value.origin && 
+      deliveryInfo.value.destination
+    ) {
+      const mapElement = document.getElementById("map");
+      if (!mapElement) return;
+      
+      const map = new window.google.maps.Map(mapElement, {
+        center: { lat: 0, lng: 0 },
+        zoom: 13,
+        mapTypeControl: false,
+      });
+      
+      // Créer les marqueurs pour le restaurant et le client
+      const restaurantMarker = new window.google.maps.Marker({
+        position: deliveryInfo.value.origin,
+        map: map,
+        title: restaurant.value?.name || "Restaurant",
+        icon: {
+          url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        },
+      });
+      
+      const customerMarker = new window.google.maps.Marker({
+        position: deliveryInfo.value.destination,
+        map: map,
+        title: "Client",
+        icon: {
+          url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+        },
+      });
+      
+      // Si le livreur a une position et qu'il est en livraison, ajouter son marqueur
+      if (order.value.status === "delivering" && deliveryInfo.value.currentPosition) {
+        const delivererMarker = new window.google.maps.Marker({
+          position: deliveryInfo.value.currentPosition,
+          map: map,
+          title: getDelivererDisplayName.value,
+          icon: {
+            url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+          },
+        });
+      }
+      
+      // Tracer l'itinéraire
+      const directionsService = new window.google.maps.DirectionsService();
+      const directionsRenderer = new window.google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true, // Nous utilisons nos propres marqueurs
+      });
+      
+      directionsService.route(
+        {
+          origin: deliveryInfo.value.origin,
+          destination: deliveryInfo.value.destination,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (response: any, status: string) => {
+          if (status === "OK") {
+            directionsRenderer.setDirections(response);
+            
+            // Ajuster la vue pour que tout soit visible
+            const bounds = new window.google.maps.LatLngBounds();
+            bounds.extend(deliveryInfo.value.origin);
+            bounds.extend(deliveryInfo.value.destination);
+            if (deliveryInfo.value.currentPosition) {
+              bounds.extend(deliveryInfo.value.currentPosition);
+            }
+            map.fitBounds(bounds);
+          } else {
+            console.error("Erreur lors du calcul de l'itinéraire:", status);
+          }
+        }
+      );
+    }
+  };
+
+  // Définition des types d'état de commande
+  const getStatusColorClass = (status: string): string => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-500';
+      case 'confirmed':
+        return 'bg-blue-500';
+      case 'preparing':
+        return 'bg-purple-500';
+      case 'ready':
+        return 'bg-indigo-500';
+      case 'delivering':
+        return 'bg-orange-500';
+      case 'delivered':
+        return 'bg-green-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  // Fonction pour obtenir les étapes futures
+  const getFutureSteps = (currentStatus: string): { status: string; label: string }[] => {
+    const allSteps: { status: string; label: string }[] = [
+      { status: 'pending', label: 'Commande reçue' },
+      { status: 'confirmed', label: 'Commande confirmée' },
+      { status: 'preparing', label: 'Préparation en cours' },
+      { status: 'ready', label: 'Prête pour livraison' },
+      { status: 'delivering', label: 'En cours de livraison' },
+      { status: 'delivered', label: 'Livrée' }
+    ];
+    
+    const currentIndex = allSteps.findIndex(step => step.status === currentStatus);
+    if (currentIndex === -1) return [];
+    
+    return allSteps.slice(currentIndex + 1);
   };
 
   onMounted(async () => {
     // Charger le script Google Maps
     await loadGoogleMapsScript();
 
-    if (!orderId) {
-      error.value = 'ID de commande manquant';
-      loading.value = false;
-      return;
-    }
-
-    const orderRef = doc(db, 'orders', orderId);
-    unsubscribe = onSnapshot(
-      orderRef,
-      async (doc) => {
+    // Charger les détails de la commande
+    try {
+      const orderRef = doc(db, "orders", orderId.value);
+      const unsubscribe = onSnapshot(orderRef, async (doc) => {
         if (doc.exists()) {
-          const orderData = { id: doc.id, ...doc.data() } as Order;
-          order.value = orderData;
+          order.value = { id: doc.id, ...doc.data() };
           
-          // Charger les informations du restaurant
-          if (orderData.restaurantId) {
-            await loadRestaurantInfo(orderData.restaurantId);
+          // Charger les infos du restaurant
+          if (order.value.restaurantId) {
+            await loadRestaurantInfo(order.value.restaurantId);
           }
           
-          // Charger les informations du livreur si disponible
-          if (orderData.deliveryId) {
-            await loadDelivererInfo(orderData.deliveryId);
-          } else {
-            deliverer.value = null;
-            estimatedTime.value = null;
-            remainingDistance.value = null;
+          // Charger les infos du livreur si assigné
+          if (order.value.deliveryId) {
+            await loadDelivererInfo(order.value.deliveryId);
           }
+          
+          // Calculer les infos de livraison
+          await calculateDeliveryInfo();
+          
+          loading.value = false;
         } else {
-          error.value = 'Commande non trouvée';
+          error.value = "Commande non trouvée";
+          loading.value = false;
         }
-        loading.value = false;
-      },
-      (err) => {
-        console.error('Erreur lors du chargement de la commande:', err);
-        error.value = 'Erreur lors du chargement de la commande';
-        loading.value = false;
-      }
-    );
-  });
-
-  onUnmounted(() => {
-    if (unsubscribe) {
-      unsubscribe();
+      });
+      
+      // Nettoyer l'abonnement
+      onUnmounted(() => {
+        unsubscribe();
+      });
+    } catch (e: any) {
+      error.value = e.message;
+      loading.value = false;
     }
   });
   </script>

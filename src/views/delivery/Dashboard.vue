@@ -1,29 +1,16 @@
 <template>
   <div class="min-h-screen bg-gray-100">
     <header class="bg-white shadow">
-      <div
-        class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <h1 class="text-3xl font-bold text-gray-900">Dashboard Livreur</h1>
         <div class="flex items-center space-x-4">
           <div class="flex items-center">
-            <span class="mr-2 text-sm text-gray-500">Disponibilité</span>
-            <button
-              @click="toggleAvailability"
-              :class="[
-                'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500',
-                isAvailable ? 'bg-indigo-600' : 'bg-gray-200',
-              ]"
-              role="switch"
-              :aria-checked="isAvailable"
+            <span class="mr-2 text-sm text-gray-500">Statut: </span>
+            <span class="text-sm font-medium"
+              :class="isAvailable ? 'text-green-600' : 'text-red-600'"
             >
-              <span
-                :class="[
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200',
-                  isAvailable ? 'translate-x-5' : 'translate-x-0',
-                ]"
-              />
-            </button>
+              {{ isAvailable ? "Disponible" : "Indisponible" }}
+            </span>
           </div>
           <button
             @click="authStore.signOut"
@@ -103,32 +90,58 @@
               </div>
 
               <div class="mt-4">
-                <div class="flex items-center space-x-2">
-                  <svg
-                    class="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  <span class="text-sm text-gray-900">{{
-                    currentDelivery.customerAddress
-                  }}</span>
+                <!-- Restaurant Information -->
+                <div class="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <h3 class="text-sm font-medium text-gray-900 mb-2">Restaurant à collecter</h3>
+                  <div class="flex items-center space-x-2 mb-2">
+                    <svg class="h-5 w-5 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span class="text-sm font-medium text-gray-900">{{ restaurantNames[currentDelivery.restaurantId] || 'Chargement...' }}</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <svg class="h-5 w-5 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-sm text-gray-900">{{ restaurantAddresses[currentDelivery.restaurantId] || "Adresse non spécifiée" }}</span>
+                  </div>
                 </div>
+
+                <!-- Client Information -->
+                <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <h3 class="text-sm font-medium text-gray-900 mb-2">Client à livrer</h3>
+                  <div class="flex items-center space-x-2 mb-2">
+                    <svg class="h-5 w-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span class="text-sm font-medium text-gray-900">{{ currentDelivery.customerName }}</span>
+                  </div>
+                  <div class="flex items-center space-x-2 mb-2">
+                    <svg class="h-5 w-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span class="text-sm text-gray-900">{{ clientPhones[currentDelivery.customerId] || "Téléphone non spécifié" }}</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <svg class="h-5 w-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-sm text-gray-900">{{ currentDelivery.customerAddress || "Adresse non spécifiée" }}</span>
+                  </div>
+                </div>
+
                 <div class="mt-2 text-sm text-gray-500">
-                  {{ currentDelivery.deliveryNotes }}
+                  <div class="font-medium text-gray-900 mb-1">Instructions:</div>
+                  {{ currentDelivery.deliveryNotes || "Aucune instruction spéciale" }}
                 </div>
               </div>
 
@@ -224,26 +237,31 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "../../stores/auth";
+import { db } from "../../firebase/config";
 import {
+  collection,
   doc,
   getDoc,
-  updateDoc,
   query,
-  collection,
   where,
+  updateDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { db } from "../../firebase/config";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import type { DeliveryProfile, Order } from "../../stores/restaurant";
+import type { DeliveryProfile, Order, OrderStatus } from "../../stores/restaurant";
 
-const authStore = useAuthStore();
-const deliveryProfile = ref<DeliveryProfile | null>(null);
+// State
 const isAvailable = ref(false);
+const deliveryProfile = ref<DeliveryProfile | null>(null);
 const currentDelivery = ref<Order | null>(null);
 const deliveryHistory = ref<Order[]>([]);
-let unsubscribeOrders: (() => void) | null = null;
+const unsubscribeOrders = ref<(() => void) | null>(null);
+const restaurantNames = ref<Record<string, string>>({});
+const restaurantAddresses = ref<Record<string, string>>({});
+const clientPhones = ref<Record<string, string>>({});
+
+const authStore = useAuthStore();
 
 const formatPrice = (amount: number) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -251,7 +269,7 @@ const formatPrice = (amount: number) => {
     currency: "EUR",
   }).format(amount);
 };
-
+  
 const formatDate = (date: Date) => {
   return format(date, "dd/MM/yyyy HH:mm", { locale: fr });
 };
@@ -271,37 +289,31 @@ const fetchDeliveryProfile = async () => {
   }
 };
 
-const toggleAvailability = async () => {
-  if (!authStore.user) return;
-
-  const newStatus = !isAvailable.value;
-  await updateDoc(doc(db, "deliveryProfiles", authStore.user.uid), {
-    isAvailable: newStatus,
-  });
-  isAvailable.value = newStatus;
-};
-
 const updateLocation = async () => {
   if (!authStore.user || !navigator.geolocation) return;
 
   navigator.geolocation.getCurrentPosition(async (position) => {
     const { latitude, longitude } = position.coords;
+
     await updateDoc(doc(db, "deliveryProfiles", authStore.user!.uid), {
-      currentLocation: { lat: latitude, lng: longitude },
+      currentLocation: {
+        lat: latitude,
+        lng: longitude,
+      },
     });
   });
 };
 
 const completeDelivery = async () => {
-  if (!currentDelivery.value?.id) return;
+  if (!currentDelivery.value || !authStore.user) return;
 
-  await updateDoc(doc(db, "orders", currentDelivery.value.id), {
+  // Mettre à jour le statut de la commande
+  await updateDoc(doc(db, "orders", currentDelivery.value.id!), {
     status: "delivered",
-    deliveredAt: new Date(),
     trackingHistory: [
-      ...currentDelivery.value.trackingHistory,
+      ...(currentDelivery.value.trackingHistory || []),
       {
-        status: "delivered",
+        status: "delivered" as OrderStatus,
         timestamp: new Date(),
         note: "Commande livrée",
       },
@@ -316,6 +328,51 @@ const completeDelivery = async () => {
   }
 };
 
+const getRestaurantName = async (restaurantId: string) => {
+  // Vérifier si le nom est déjà dans le cache
+  if (restaurantNames.value[restaurantId]) {
+    return restaurantNames.value[restaurantId];
+  }
+
+  try {
+    // Sinon récupérer le nom depuis la base de données
+    const restaurantDoc = await getDoc(doc(db, "restaurants", restaurantId));
+    if (restaurantDoc.exists()) {
+      const restaurantData = restaurantDoc.data();
+      // Mettre en cache le nom et l'adresse du restaurant
+      restaurantNames.value[restaurantId] = restaurantData.name || "Restaurant sans nom";
+      restaurantAddresses.value[restaurantId] = restaurantData.address || "Adresse non spécifiée";
+      return restaurantNames.value[restaurantId];
+    }
+    return "Restaurant non trouvé";
+  } catch (error) {
+    console.error("Erreur lors de la récupération du restaurant:", error);
+    return "Erreur de chargement";
+  }
+};
+
+const getClientPhone = async (clientId: string) => {
+  // Vérifier si le numéro est déjà dans le cache
+  if (clientPhones.value[clientId]) {
+    return clientPhones.value[clientId];
+  }
+
+  try {
+    // Récupérer le profil client depuis la base de données
+    const clientDoc = await getDoc(doc(db, "clientProfiles", clientId));
+    if (clientDoc.exists()) {
+      const clientData = clientDoc.data();
+      // Mettre en cache le numéro de téléphone
+      clientPhones.value[clientId] = clientData.phone || "Téléphone non spécifié";
+      return clientPhones.value[clientId];
+    }
+    return "Téléphone non spécifié";
+  } catch (error) {
+    console.error("Erreur lors de la récupération du profil client:", error);
+    return "Erreur de chargement";
+  }
+};
+
 onMounted(async () => {
   await fetchDeliveryProfile();
 
@@ -327,27 +384,59 @@ onMounted(async () => {
     where("deliveryId", "==", authStore.user.uid)
   );
 
-  unsubscribeOrders = onSnapshot(q, (snapshot) => {
+  unsubscribeOrders.value = onSnapshot(q, (snapshot) => {
     const orders = snapshot.docs.map(
       (doc) =>
         ({
           id: doc.id,
           ...doc.data(),
-          createdAt: doc.data().createdAt.toDate(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
         } as Order)
     );
 
-    currentDelivery.value =
-      orders.find((order) => order.status === "delivering") || null;
+    // Débogage - afficher toutes les commandes récupérées
+    console.log("Commandes récupérées:", orders);
+    
+    // Trouver les commandes en livraison (vérifier différents statuts possibles)
+    const deliveringOrder = orders.find(
+      (order) => order.status === "delivering" || String(order.status) === "in_delivery" || String(order.status) === "en_livraison"
+    );
+    
+    console.log("Commande en livraison trouvée:", deliveringOrder);
+    currentDelivery.value = deliveringOrder || null;
+    
+    // Si une commande en cours est trouvée, récupérer les informations du restaurant et du client
+    if (currentDelivery.value) {
+      if (currentDelivery.value.restaurantId) {
+        getRestaurantName(currentDelivery.value.restaurantId);
+      }
+      if (currentDelivery.value.customerId) {
+        getClientPhone(currentDelivery.value.customerId);
+      }
+    }
+    
     deliveryHistory.value = orders
-      .filter((order) => order.status === "delivered")
+      .filter((order) => order.status === "delivered" || String(order.status) === "livré" || String(order.status) === "complete")
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      
+    // Mise à jour du compteur de livraisons si nécessaire
+    if (deliveryProfile.value && deliveryHistory.value.length > 0 && 
+        (!deliveryProfile.value.totalDeliveries || deliveryProfile.value.totalDeliveries < deliveryHistory.value.length)) {
+      updateDoc(doc(db, "deliveryProfiles", authStore.user.uid), {
+        totalDeliveries: deliveryHistory.value.length
+      }).then(() => {
+        if (deliveryProfile.value) {
+          deliveryProfile.value.totalDeliveries = deliveryHistory.value.length;
+        }
+      });
+    }
   });
 });
 
 onUnmounted(() => {
-  if (unsubscribeOrders) {
-    unsubscribeOrders();
+  if (unsubscribeOrders.value) {
+    unsubscribeOrders.value();
+    unsubscribeOrders.value = null as unknown as (() => void);
   }
 });
 </script>
